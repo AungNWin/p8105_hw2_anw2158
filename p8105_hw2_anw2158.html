@@ -524,14 +524,14 @@ all_trash_data = bind_rows(mr_trash_wheel, professor_trash_wheel, gwynnda_trash_
 ## • `` -&gt; `...15`
 ## • `` -&gt; `...16`</code></pre>
 <p>The dataset, created by combining data from Mr. Trash Wheel,
-Professor Trash Wheel, and Gwynnda, provides a comprehensive overview of
-trash collection efforts and their environmental impact. It contains a
-total of nrow(all_trash_data) observations, making it a valuable
-resource for analysis. Key variables in this dataset include ‘Date,’
-which records the collection date; ‘Location,’ specifying where the
-trash was collected; ‘Trash_Collected_lb,’ denoting the total pounds of
-trash collected; and ‘Homes_Powered,’ which approximates the number of
-homes powered by the energy generated, a vital measure of their
+Professor Trash Wheel, and Gwynnda Trash Wheel, provides a comprehensive
+overview of trash collection efforts and their environmental impact. It
+contains a total of nrow(all_trash_data) observations, making it a
+valuable resource for analysis. Key variables in this dataset include
+‘Date,’ which records the collection date; ‘Location,’ specifying where
+the trash was collected; ‘Trash_Collected_lb,’ denoting the total pounds
+of trash collected; and ‘Homes_Powered,’ which approximates the number
+of homes powered by the energy generated, a vital measure of their
 eco-friendly operations. The ‘Trash_Wheel’ variable helps identify the
 source of the data, distinguishing between the three Trash Wheels.
 Researchers and environmental enthusiasts can use this dataset to
@@ -543,6 +543,69 @@ contributing to a cleaner and more sustainable urban environment.</p>
 <p>Total number of cigarette butts collected by Gwynnda in July 2021</p>
 <pre class="r"><code>total_butts_gwynnda_july =
   sum(gwynnda_trash_wheel$Cigarette_Butts_Collected[gwynnda_trash_wheel$Date &gt;= &quot;2021-07-01&quot; &amp; gwynnda_trash_wheel$Date &lt;= &quot;2021-07-31&quot;])</code></pre>
+</div>
+<div id="problem-3" class="section level3">
+<h3>Problem 3</h3>
+<p>Import the demographic data</p>
+<pre class="r"><code>demographic_df = 
+  read.csv(&quot;data_mci/MCI_baseline.csv&quot;, skip = 1) |&gt;
+  janitor::clean_names() |&gt;
+  mutate(
+    sex = recode(sex, &quot;1&quot; = &quot;male&quot; , &quot;0&quot; = &quot;female&quot;),
+    apoe4 = recode(apoe4, &quot;1&quot; = &quot;carrier&quot; , &quot;0&quot; = &quot;non-carrier&quot;)
+  )</code></pre>
+<p>Filter out participants who do not meet the inclusion criteria (no
+MCI at baseline)</p>
+<pre class="r"><code>demographic_ = demographic_df %&gt;%
+  subset(current_age &lt; age_at_onset | age_at_onset == &quot;.&quot;)</code></pre>
+<p>Summary statistics</p>
+<p>people who meet requirements</p>
+<pre class="r"><code>demographic_meet = demographic_df |&gt;
+  subset(current_age &lt; age_at_onset | age_at_onset == &quot;.&quot;) |&gt;
+  mutate(age_at_onset = ifelse(age_at_onset == &quot;.&quot; , NA , age_at_onset))
+#cleaned
+cleaned_demographic = demographic_meet |&gt;
+  drop_na()</code></pre>
+<p>average baseline age</p>
+<pre class="r"><code>mean(demographic_meet$current_age)</code></pre>
+<pre><code>## [1] 65.0286</code></pre>
+<pre class="r"><code>print(mean)</code></pre>
+<pre><code>## function (x, ...) 
+## UseMethod(&quot;mean&quot;)
+## &lt;bytecode: 0x7f78562a7f90&gt;
+## &lt;environment: namespace:base&gt;</code></pre>
+<p>proportion of women in the study are APOE4 carriers</p>
+<pre class="r"><code>fc=
+  sum(demographic_meet$apoe4 == &quot;carrier&quot; &amp; demographic_meet$sex == &quot;female&quot;)
+f=
+  sum(demographic_meet$sex == &quot;female&quot;)
+print(fc/f) * 100</code></pre>
+<pre><code>## [1] 0.3</code></pre>
+<pre><code>## [1] 30</code></pre>
+<p>Import the biomarker data</p>
+<pre class="r"><code>biomarker_df = 
+  read_csv(&quot;data_mci/mci_amyloid.csv&quot; , skip = 1) |&gt;
+  janitor::clean_names() </code></pre>
+<pre><code>## Rows: 487 Columns: 6
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (5): Baseline, Time 2, Time 4, Time 6, Time 8
+## dbl (1): Study ID
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<p>Check for duplicate participants in both demographic and biomarker
+datasets</p>
+<pre class="r"><code>participants_demographic = unique(demographic_df$id)
+participants_biomarker = unique(biomarker_df$study_id)</code></pre>
+<p>Combine the demographic and biomarker datasets so that only
+participants who appear in both datasets are retained</p>
+<pre class="r"><code>library(dplyr)
+demographic_meet = demographic_meet |&gt;
+  rename(study_id = id)
+view(demographic_meet)</code></pre>
+<pre class="r"><code>merge_mci = merge(demographic_meet, biomarker_df, by = &quot;study_id&quot;)</code></pre>
+<pre class="r"><code>write.csv(merge_mci, &quot;p8105_hw2_anw2158&quot;, row.names = FALSE)</code></pre>
 </div>
 
 

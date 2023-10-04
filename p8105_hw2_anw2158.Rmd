@@ -127,7 +127,7 @@ gwynnda_trash_wheel$Trash_Wheel = "Gwynnda Trash Wheel"
 all_trash_data = bind_rows(mr_trash_wheel, professor_trash_wheel, gwynnda_trash_wheel)
 ```
 
-The dataset, created by combining data from Mr. Trash Wheel, Professor Trash Wheel, and Gwynnda, provides a comprehensive overview of trash collection efforts and their environmental impact. It contains a total of nrow(all_trash_data) observations, making it a valuable resource for analysis. Key variables in this dataset include 'Date,' which records the collection date; 'Location,' specifying where the trash was collected; 'Trash_Collected_lb,' denoting the total pounds of trash collected; and 'Homes_Powered,' which approximates the number of homes powered by the energy generated, a vital measure of their eco-friendly operations. The 'Trash_Wheel' variable helps identify the source of the data, distinguishing between the three Trash Wheels. Researchers and environmental enthusiasts can use this dataset to examine trends in trash collection, energy generation, and the environmental impact of these innovative initiatives, ultimately contributing to a cleaner and more sustainable urban environment.
+The dataset, created by combining data from Mr. Trash Wheel, Professor Trash Wheel, and Gwynnda Trash Wheel, provides a comprehensive overview of trash collection efforts and their environmental impact. It contains a total of nrow(all_trash_data) observations, making it a valuable resource for analysis. Key variables in this dataset include 'Date,' which records the collection date; 'Location,' specifying where the trash was collected; 'Trash_Collected_lb,' denoting the total pounds of trash collected; and 'Homes_Powered,' which approximates the number of homes powered by the energy generated, a vital measure of their eco-friendly operations. The 'Trash_Wheel' variable helps identify the source of the data, distinguishing between the three Trash Wheels. Researchers and environmental enthusiasts can use this dataset to examine trends in trash collection, energy generation, and the environmental impact of these innovative initiatives, ultimately contributing to a cleaner and more sustainable urban environment.
 
 Total weight of trash collected by Professor Trash Wheel
 
@@ -142,3 +142,83 @@ total_butts_gwynnda_july =
   sum(gwynnda_trash_wheel$Cigarette_Butts_Collected[gwynnda_trash_wheel$Date >= "2021-07-01" & gwynnda_trash_wheel$Date <= "2021-07-31"])
 ```
 
+### Problem 3
+
+Import the demographic data
+
+```{r}
+demographic_df = 
+  read.csv("data_mci/MCI_baseline.csv", skip = 1) |>
+  janitor::clean_names() |>
+  mutate(
+    sex = recode(sex, "1" = "male" , "0" = "female"),
+    apoe4 = recode(apoe4, "1" = "carrier" , "0" = "non-carrier")
+  )
+
+```
+
+Filter out participants who do not meet the inclusion criteria (no MCI at baseline)
+
+```{r}
+demographic_ = demographic_df %>%
+  subset(current_age < age_at_onset | age_at_onset == ".")
+```
+
+Summary statistics
+
+people who meet requirements
+```{r}
+demographic_meet = demographic_df |>
+  subset(current_age < age_at_onset | age_at_onset == ".") |>
+  mutate(age_at_onset = ifelse(age_at_onset == "." , NA , age_at_onset))
+#cleaned
+cleaned_demographic = demographic_meet |>
+  drop_na()
+```
+
+average baseline age
+```{r}
+mean(demographic_meet$current_age)
+print(mean)
+```
+
+proportion of women in the study are APOE4 carriers
+```{r}
+fc=
+  sum(demographic_meet$apoe4 == "carrier" & demographic_meet$sex == "female")
+f=
+  sum(demographic_meet$sex == "female")
+print(fc/f) * 100
+```
+
+Import the biomarker data
+
+```{r}
+biomarker_df = 
+  read_csv("data_mci/mci_amyloid.csv" , skip = 1) |>
+  janitor::clean_names() 
+```
+
+Check for duplicate participants in both demographic and biomarker datasets
+
+```{r}
+participants_demographic = unique(demographic_df$id)
+participants_biomarker = unique(biomarker_df$study_id)
+```
+
+Combine the demographic and biomarker datasets so that only participants who appear in both datasets are retained
+
+```{r}
+library(dplyr)
+demographic_meet = demographic_meet |>
+  rename(study_id = id)
+view(demographic_meet)
+```
+
+```{r}
+merge_mci = merge(demographic_meet, biomarker_df, by = "study_id")
+```
+
+```{r}
+write.csv(merge_mci, "p8105_hw2_anw2158", row.names = FALSE)
+```
